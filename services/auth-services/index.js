@@ -14,12 +14,12 @@ const dbConfig = {
     database: process.env.DB_NAME
 };
 
-app.get('/auth/github', (req, res) => {
+app.get('/github', (req, res) => {
     const url = `https://github.com/login/oauth/authorize?client_id=${process.env.GITHUB_CLIENT_ID}&redirect_uri=http://localhost:3000/auth/github/callback&scope=user:email`;
     res.redirect(url);
 });
 
-app.get('/auth/github/callback', async (req, res) => {
+app.get('/github/callback', async (req, res) => {
     const { code } = req.query;
     if (!code) return res.status(400).json({ error: "Code not found" });
 
