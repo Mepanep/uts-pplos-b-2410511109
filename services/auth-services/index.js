@@ -1,4 +1,5 @@
 require('dotenv').config();
+console.log("ID GitHub:", process.env.GITHUB_CLIENT_ID);
 const express = require('express');
 const axios = require('axios');
 const jwt = require('jsonwebtoken');
@@ -15,6 +16,7 @@ const dbConfig = {
 };
 
 app.get('/github', (req, res) => {
+    console.log("Client ID yang dibaca:", process.env.GITHUB_CLIENT_ID);
     const url = `https://github.com/login/oauth/authorize?client_id=${process.env.GITHUB_CLIENT_ID}&redirect_uri=http://localhost:3000/auth/github/callback&scope=user:email`;
     res.redirect(url);
 });
