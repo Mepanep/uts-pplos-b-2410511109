@@ -12,12 +12,12 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('fields', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('field_category_id')->constrained()->onDelete('cascade');
-            $table->string('name');
-            $table->integer('price/hour');
-            $table->timestamps();
-        });
+        $table->id();
+        $table->foreignId('field_category_id')->constrained()->onDelete('cascade');
+        $table->string('name');
+        $table->decimal('price_per_hour', 15, 2);
+        $table->timestamps();
+    });
     }
 
     /**

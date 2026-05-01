@@ -13,10 +13,6 @@ return new class extends Migration
     {
         Schema::create('bookings', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained();
-            $table->foreignId('field_id')->constrained();
-            $table->dateTime('booking_time');
-            $table->enum('payment_status', ['dp', 'lunas', 'pending'])->default('pending');
             $table->timestamps();
         });
     }
