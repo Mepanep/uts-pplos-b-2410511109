@@ -3,6 +3,8 @@ const { createProxyMiddleware } = require('http-proxy-middleware');
 const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 
+const app = express();
+
 const limiter = rateLimit({
     windowMs: 1 * 60 * 1000, //1 menit
     max: 60,
@@ -21,10 +23,6 @@ const verifyJWT = (req, res, next) => {
         next();
     });
 };
-
-
-
-const app = express();
 
 app.use('/auth', createProxyMiddleware({ 
     target: 'http://localhost:3004', 

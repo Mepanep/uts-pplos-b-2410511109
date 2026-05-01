@@ -16,6 +16,19 @@ const dbConfig = {
     database: process.env.DB_NAME
 };
 
+let connection;
+
+async function initDB() {
+    try {
+        connection = await mysql.createConnection(dbConfig);
+        console.log("Database db_auth_service terhubung!");
+    } catch (err) {
+        console.error("Gagal koneksi database:", err.message);
+    }
+}
+
+initDB();
+
 app.get('/github', (req, res) => {
     console.log("Client ID yang dibaca:", process.env.GITHUB_CLIENT_ID);
     const url = `https://github.com/login/oauth/authorize?client_id=${process.env.GITHUB_CLIENT_ID}&redirect_uri=http://localhost:3000/auth/github/callback&scope=user:email`;
@@ -44,8 +57,6 @@ app.get('/github/callback', async (req, res) => {
         const email = data.email || `${login}@github.com`;
         const avatar_url = data.avatar_url || '';
 
-        const connection = await mysql.createConnection(dbConfig);
-        
         const [rows] = await connection.execute('SELECT * FROM users WHERE email = ?', [email]);
         
         let userId;
@@ -58,7 +69,6 @@ app.get('/github/callback', async (req, res) => {
         } else {
             userId = rows[0].id;
         }
-        await connection.end();
 
         const accessToken = jwt.sign(
             { id: userId, username: login }, 
@@ -103,18 +113,22 @@ app.post('/register', async (req, res) => {
 app.post('/login', async (req, res) => {
     const { email, password } = req.body;
     
-    const [rows] = await connection.execute('SELECT * FROM users WHERE email = ?', [email]);
-    if (rows.length === 0) return res.status(401).json({ message: "User tidak ditemukan" });
+    try {
+        const [rows] = await connection.execute('SELECT * FROM users WHERE email = ?', [email]);
+        if (rows.length === 0) return res.status(401).json({ message: "User tidak ditemukan" });
 
-    const user = rows[0];
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    
-    if (!isPasswordValid) return res.status(401).json({ message: "Password salah" });
+        const user = rows[0];
+        const isPasswordValid = await bcrypt.compare(password, user.password);
+        
+        if (!isPasswordValid) return res.status(401).json({ message: "Password salah" });
 
-    const accessToken = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: '15m' });
-    const refreshToken = jwt.sign({ id: user.id }, process.env.JWT_REFRESH_SECRET, { expiresIn: '7d' });
+        const accessToken = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: '15m' });
+        const refreshToken = jwt.sign({ id: user.id }, process.env.JWT_REFRESH_SECRET, { expiresIn: '7d' });
 
-    res.json({ accessToken, refreshToken, user: { username: user.username, email: user.email } });
+        res.json({ accessToken, refreshToken, user: { username: user.username, email: user.email } });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
 });
 
 const PORT = process.env.PORT || 3004;
