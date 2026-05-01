@@ -131,5 +131,12 @@ app.post('/login', async (req, res) => {
     }
 });
 
+app.get('/auth/me', verifyJWT, (req, res) => {
+    res.json({
+        message: "Data user berhasil diambil",
+        user: req.user 
+    });
+});
+
 const PORT = process.env.PORT || 3004;
 app.listen(PORT, () => console.log(`Auth Service running on port ${PORT}`));

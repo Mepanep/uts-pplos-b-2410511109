@@ -36,8 +36,20 @@ app.use('/auth', createProxyMiddleware({
     changeOrigin: true 
 }));
 
+app.use('/auth/me', verifyJWT, createProxyMiddleware({ 
+    target: 'http://localhost:3004/auth/me', 
+    changeOrigin: true,
+    ignorePath: true
+}));
+
 app.use('/api/fields', verifyJWT, createProxyMiddleware({ 
     target: 'http://127.0.0.1:8000/api/fields', 
+    changeOrigin: true,
+    ignorePath: true
+}));
+
+app.use('/api/categories', verifyJWT, createProxyMiddleware({ 
+    target: 'http://localhost:8000/api/categories', 
     changeOrigin: true,
     ignorePath: true
 }));
@@ -51,6 +63,18 @@ app.use('/api/book', verifyJWT, createProxyMiddleware({
 app.use('/payment', createProxyMiddleware({ 
     target: 'http://localhost:3005', 
     changeOrigin: true 
+}));
+
+app.use('/api/payment/process', verifyJWT, createProxyMiddleware({ 
+    target: 'http://localhost:3005/process', 
+    changeOrigin: true,
+    ignorePath: true 
+}));
+
+app.use('/api/payment/history', verifyJWT, createProxyMiddleware({ 
+    target: 'http://localhost:3005/history', 
+    changeOrigin: true,
+    ignorePath: true 
 }));
 
 const PORT = 3000;
