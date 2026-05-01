@@ -1,24 +1,31 @@
+require('dotenv').config();
 const express = require('express');
 const { createProxyMiddleware } = require('http-proxy-middleware');
 const rateLimit = require('express-rate-limit');
-require('dotenv').config();
+const jwt = require('jsonwebtoken');
 
 const app = express();
 
 const limiter = rateLimit({
-    windowMs: 1 * 60 * 1000, //1 menit
+    windowMs: 1 * 60 * 1000, // 1 menit
     max: 60,
-    message: "Terlalu banyak request, silakan coba lagi nanti."
+    message: { message: "Terlalu banyak request, silakan coba lagi nanti." }
 });
 
 app.use(limiter);
 
 const verifyJWT = (req, res, next) => {
-    const token = req.headers['authorization']?.split(' ')[1];
-    if (!token) return res.status(401).json({ message: "Token tidak ditemukan" });
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
 
-    jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
-        if (err) return res.status(403).json({ message: "Token tidak valid atau kadaluwarsa" });
+    if (!token) {
+        return res.status(401).json({ message: "Token tidak ditemukan, silakan login terlebih dahulu" });
+    }
+
+    jwt.verify(token, process.env.JWT_SECRET || 'rahasia_super_pendek_15_menit', (err, decoded) => {
+        if (err) {
+            return res.status(403).json({ message: "Token tidak valid atau kadaluwarsa" });
+        }
         req.user = decoded;
         next();
     });
@@ -29,9 +36,16 @@ app.use('/auth', createProxyMiddleware({
     changeOrigin: true 
 }));
 
-app.use('/booking', verifyJWT, createProxyMiddleware({ 
-    target: 'http://localhost:8000', 
-    changeOrigin: true 
+app.use('/api/fields', verifyJWT, createProxyMiddleware({ 
+    target: 'http://127.0.0.1:8000/api/fields', 
+    changeOrigin: true,
+    ignorePath: true
+}));
+
+app.use('/api/book', verifyJWT, createProxyMiddleware({ 
+    target: 'http://127.0.0.1:8000/api/book', 
+    changeOrigin: true,
+    ignorePath: true
 }));
 
 app.use('/payment', createProxyMiddleware({ 
@@ -41,5 +55,5 @@ app.use('/payment', createProxyMiddleware({
 
 const PORT = 3000;
 app.listen(PORT, () => {
-    console.log(`API Gateway running on http://localhost:${PORT}`);
+    console.log(`[OK] API Gateway running on http://localhost:${PORT}`);
 });
