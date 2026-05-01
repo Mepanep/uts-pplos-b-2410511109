@@ -34,16 +34,23 @@ app.post('/process', verifyJWT, async (req, res) => {
         const connection = await mysql.createConnection(dbConfig);
         const transaction_id = 'PAY-' + Date.now();
 
+        // 1. Simpan data ke tabel payments
         await connection.execute(
             'INSERT INTO payments (user_id, booking_id, amount, payment_method, status, transaction_id) VALUES (?, ?, ?, ?, ?, ?)',
             [user_id, booking_id, amount, payment_method, 'success', transaction_id]
+        );
+
+        // 2. UPDATE status di tabel bookings menjadi 'success' (KRUSIAL!)
+        await connection.execute(
+            'UPDATE bookings SET status = ? WHERE id = ?',
+            ['success', booking_id]
         );
 
         await connection.end();
 
         res.status(201).json({
             status: 'success',
-            message: 'Pembayaran berhasil dicatat',
+            message: 'Pembayaran berhasil dan status pesanan telah diperbarui',
             data: { transaction_id, booking_id, amount, user_id }
         });
     } catch (error) {

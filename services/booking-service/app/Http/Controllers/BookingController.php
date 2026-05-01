@@ -32,7 +32,7 @@ class BookingController extends Controller
                 'start_time'  => $request->start_time,
                 'end_time'    => $request->end_time,
                 'total_price' => $request->total_price,
-                'status'      => 'pending'
+                // 'status'      => 'pending'
             ]);
 
             return response()->json([

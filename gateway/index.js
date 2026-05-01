@@ -36,8 +36,8 @@ app.use('/auth', createProxyMiddleware({
     changeOrigin: true 
 }));
 
-app.use('/auth/me', verifyJWT, createProxyMiddleware({ 
-    target: 'http://localhost:3004/auth/me', 
+app.use('auth/me', verifyJWT, createProxyMiddleware({ 
+    target: 'http://localhost:3004/me', 
     changeOrigin: true,
     ignorePath: true
 }));
@@ -58,6 +58,12 @@ app.use('/api/book', verifyJWT, createProxyMiddleware({
     target: 'http://127.0.0.1:8000/api/book', 
     changeOrigin: true,
     ignorePath: true
+}));
+
+app.use('/api/bookings', verifyJWT, createProxyMiddleware({ 
+    target: 'http://localhost:8000/api/bookings',
+    changeOrigin: true,
+    ignorePath: true 
 }));
 
 app.use('/payment', createProxyMiddleware({ 

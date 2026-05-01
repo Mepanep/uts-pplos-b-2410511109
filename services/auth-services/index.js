@@ -16,6 +16,19 @@ const dbConfig = {
     database: process.env.DB_NAME
 };
 
+const verifyJWT = (req, res, next) => {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+
+    if (!token) return res.status(401).json({ message: "Token tidak ditemukan" });
+
+    jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+        if (err) return res.status(403).json({ message: "Token tidak valid" });
+        req.user = decoded;
+        next();
+    });
+};
+
 let connection;
 
 async function initDB() {
@@ -131,11 +144,24 @@ app.post('/login', async (req, res) => {
     }
 });
 
-app.get('/auth/me', verifyJWT, (req, res) => {
-    res.json({
-        message: "Data user berhasil diambil",
-        user: req.user 
-    });
+app.get('/me', verifyJWT, async (req, res) => {
+    try {
+        const [rows] = await connection.execute(
+            'SELECT id, username, email, profile_photo FROM users WHERE id = ?', 
+            [req.user.id]
+        );
+
+        if (rows.length === 0) {
+            return res.status(404).json({ message: "User tidak ditemukan" });
+        }
+
+        res.json({
+            message: "Data profil berhasil diambil",
+            user: rows[0]
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
 });
 
 const PORT = process.env.PORT || 3004;
