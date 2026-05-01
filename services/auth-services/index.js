@@ -2,6 +2,7 @@ require('dotenv').config();
 console.log("ID GitHub:", process.env.GITHUB_CLIENT_ID);
 const express = require('express');
 const axios = require('axios');
+const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const mysql = require('mysql2/promise');
 
@@ -82,6 +83,38 @@ app.get('/github/callback', async (req, res) => {
         console.error("DETAIL ERROR:", error.response ? error.response.data : error.message);
         res.status(500).json({ error: "Authentication Failed", details: error.message });
     }
+});
+
+app.post('/register', async (req, res) => {
+    const { username, email, password } = req.body;
+    const hashedPassword = await bcrypt.hash(password, 10);
+    
+    try {
+        await connection.execute(
+            'INSERT INTO users (username, email, password, oauth_provider) VALUES (?, ?, ?, ?)',
+            [username, email, hashedPassword, 'local']
+        );
+        res.status(201).json({ message: "User berhasil didaftarkan" });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.post('/login', async (req, res) => {
+    const { email, password } = req.body;
+    
+    const [rows] = await connection.execute('SELECT * FROM users WHERE email = ?', [email]);
+    if (rows.length === 0) return res.status(401).json({ message: "User tidak ditemukan" });
+
+    const user = rows[0];
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    
+    if (!isPasswordValid) return res.status(401).json({ message: "Password salah" });
+
+    const accessToken = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: '15m' });
+    const refreshToken = jwt.sign({ id: user.id }, process.env.JWT_REFRESH_SECRET, { expiresIn: '7d' });
+
+    res.json({ accessToken, refreshToken, user: { username: user.username, email: user.email } });
 });
 
 const PORT = process.env.PORT || 3004;
