@@ -14,6 +14,11 @@ app.use('/booking', createProxyMiddleware({
     changeOrigin: true 
 }));
 
+app.use('/payment', createProxyMiddleware({ 
+    target: 'http://localhost:3005', 
+    changeOrigin: true 
+}));
+
 const PORT = 3000;
 app.listen(PORT, () => {
     console.log(`API Gateway running on http://localhost:${PORT}`);
