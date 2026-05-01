@@ -38,20 +38,20 @@ app.get('/github/callback', async (req, res) => {
             headers: { Authorization: `token ${githubToken}` }
         });
 
-        const { login, email, avatar_url } = userResponse.data;
-
-        const userEmail = email || `${login}@github.com`;
-        const userPhoto = avatar_url || '';
+        const data = userResponse.data;
+        const login = data.login || 'UserGitHub';
+        const email = data.email || `${login}@github.com`;
+        const avatar_url = data.avatar_url || '';
 
         const connection = await mysql.createConnection(dbConfig);
         
-        const [rows] = await connection.execute('SELECT * FROM users WHERE email = ?', [userEmail]);
+        const [rows] = await connection.execute('SELECT * FROM users WHERE email = ?', [email]);
         
         let userId;
         if (rows.length === 0) {
             const [result] = await connection.execute(
                 'INSERT INTO users (username, email, profile_photo, oauth_provider) VALUES (?, ?, ?, ?)',
-                [login, userEmail, userPhoto, 'github']
+                [login, email, avatar_url, 'github']
             );
             userId = result.insertId;
         } else {
