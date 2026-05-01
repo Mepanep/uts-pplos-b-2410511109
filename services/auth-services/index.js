@@ -76,8 +76,8 @@ app.get('/github/callback', async (req, res) => {
         });
 
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: "Authentication Failed" });
+        console.error("DETAIL ERROR:", error.response ? error.response.data : error.message);
+        res.status(500).json({ error: "Authentication Failed", details: error.message });
     }
 });
 
