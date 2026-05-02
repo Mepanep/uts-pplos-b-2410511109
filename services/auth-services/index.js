@@ -164,5 +164,51 @@ app.get('/me', verifyJWT, async (req, res) => {
     }
 });
 
+app.put('/update', verifyJWT, async (req, res) => {
+    const { username, email, profile_photo = null } = req.body;
+    const userId = req.user.id;
+
+    try {
+        const [result] = await connection.execute(
+            'UPDATE users SET username = ?, email = ?, profile_photo = ? WHERE id = ?',
+            [username, email, profile_photo || null, userId]
+        );
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: "User tidak ditemukan" });
+        }
+
+        res.json({ 
+            status: 'success', 
+            message: "Profil berhasil diperbarui",
+            user: { username, email } 
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.delete('/delete', verifyJWT, async (req, res) => {
+    const userId = req.user.id;
+
+    try {
+        const [result] = await connection.execute(
+            'DELETE FROM users WHERE id = ?', 
+            [userId]
+        );
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: "User tidak ditemukan" });
+        }
+
+        res.json({ 
+            status: 'success', 
+            message: "Akun berhasil dihapus selamanya" 
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 const PORT = process.env.PORT || 3004;
 app.listen(PORT, () => console.log(`Auth Service running on port ${PORT}`));

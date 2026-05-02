@@ -28,21 +28,19 @@ const verifyJWT = (req, res, next) => {
 
 app.post('/process', verifyJWT, async (req, res) => {
     const { booking_id, amount, payment_method } = req.body;
-    const user_id = req.user.id;
+    const user_id = req.user.id; 
 
     try {
         const connection = await mysql.createConnection(dbConfig);
         const transaction_id = 'PAY-' + Date.now();
 
-        // 1. Simpan data ke tabel payments
         await connection.execute(
-            'INSERT INTO payments (user_id, booking_id, amount, payment_method, status, transaction_id) VALUES (?, ?, ?, ?, ?, ?)',
-            [user_id, booking_id, amount, payment_method, 'success', transaction_id]
+            'INSERT INTO payments (booking_id, amount, payment_method, status, transaction_id) VALUES (?, ?, ?, ?, ?)',
+            [booking_id, amount, payment_method, 'success', transaction_id]
         );
 
-        // 2. UPDATE status di tabel bookings menjadi 'success' (KRUSIAL!)
         await connection.execute(
-            'UPDATE bookings SET status = ? WHERE id = ?',
+            'UPDATE db_booking_service.bookings SET status = ? WHERE id = ?',
             ['success', booking_id]
         );
 
@@ -51,7 +49,7 @@ app.post('/process', verifyJWT, async (req, res) => {
         res.status(201).json({
             status: 'success',
             message: 'Pembayaran berhasil dan status pesanan telah diperbarui',
-            data: { transaction_id, booking_id, amount, user_id }
+            data: { transaction_id, booking_id, amount }
         });
     } catch (error) {
         console.error(error);
@@ -60,13 +58,10 @@ app.post('/process', verifyJWT, async (req, res) => {
 });
 
 app.get('/history', verifyJWT, async (req, res) => {
-    const user_id = req.user.id;
-
     try {
         const connection = await mysql.createConnection(dbConfig);
         const [rows] = await connection.execute(
-            'SELECT * FROM payments WHERE user_id = ? ORDER BY created_at DESC',
-            [user_id]
+            'SELECT * FROM payments ORDER BY created_at DESC'
         );
         
         await connection.end();

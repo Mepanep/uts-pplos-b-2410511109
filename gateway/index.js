@@ -31,15 +31,16 @@ const verifyJWT = (req, res, next) => {
     });
 };
 
-app.use('/auth', createProxyMiddleware({ 
+app.use('/auth', (req, res, next) => {
+    const protectedRoutes = ['/me', '/update', '/delete'];
+    
+    if (protectedRoutes.includes(req.path)) {
+        return verifyJWT(req, res, next);
+    }
+    next();
+}, createProxyMiddleware({ 
     target: 'http://localhost:3004', 
-    changeOrigin: true 
-}));
-
-app.use('auth/me', verifyJWT, createProxyMiddleware({ 
-    target: 'http://localhost:3004/me', 
-    changeOrigin: true,
-    ignorePath: true
+    changeOrigin: true
 }));
 
 app.use('/api/fields', verifyJWT, createProxyMiddleware({ 
@@ -49,7 +50,7 @@ app.use('/api/fields', verifyJWT, createProxyMiddleware({
 }));
 
 app.use('/api/categories', verifyJWT, createProxyMiddleware({ 
-    target: 'http://localhost:8000/api/categories', 
+    target: 'http://127.0.0.1:8000/api/categories', 
     changeOrigin: true,
     ignorePath: true
 }));
@@ -66,21 +67,12 @@ app.use('/api/bookings', verifyJWT, createProxyMiddleware({
     ignorePath: true 
 }));
 
-app.use('/payment', createProxyMiddleware({ 
+app.use('/api/payment', createProxyMiddleware({ 
     target: 'http://localhost:3005', 
-    changeOrigin: true 
-}));
-
-app.use('/api/payment/process', verifyJWT, createProxyMiddleware({ 
-    target: 'http://localhost:3005/process', 
     changeOrigin: true,
-    ignorePath: true 
-}));
-
-app.use('/api/payment/history', verifyJWT, createProxyMiddleware({ 
-    target: 'http://localhost:3005/history', 
-    changeOrigin: true,
-    ignorePath: true 
+    pathRewrite: {
+        '^/api/payment': '',
+    },
 }));
 
 const PORT = 3000;
