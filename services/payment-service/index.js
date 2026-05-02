@@ -71,5 +71,65 @@ app.get('/history', verifyJWT, async (req, res) => {
     }
 });
 
+app.put('/payments/:id', verifyJWT, async (req, res) => {
+    const paymentId = req.params.id;
+    const { status, payment_method, transaction_id } = req.body;
+
+    const validStatus = ['pending', 'success', 'failed'];
+    if (status && !validStatus.includes(status)) {
+        return res.status(400).json({ status: 'error', message: 'Status tidak valid' });
+    }
+
+    try {
+        const connection = await mysql.createConnection(dbConfig);
+        
+        const [result] = await connection.execute(
+            'UPDATE payments SET status = ?, payment_method = ?, transaction_id = ? WHERE id = ?',
+            [
+                status || 'pending', 
+                payment_method || null, 
+                transaction_id || null, 
+                paymentId
+            ]
+        );
+
+        await connection.end();
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ status: 'error', message: 'Data pembayaran tidak ditemukan' });
+        }
+
+        res.json({
+            status: 'success',
+            message: 'Data pembayaran berhasil diperbarui'
+        });
+    } catch (error) {
+        res.status(500).json({ status: 'error', error: error.message });
+    }
+});
+
+app.delete('/payments/:id', verifyJWT, async (req, res) => {
+    const paymentId = req.params.id;
+
+    try {
+        const connection = await mysql.createConnection(dbConfig);
+        
+        const [result] = await connection.execute(
+            'DELETE FROM payments WHERE id = ?', 
+            [paymentId]
+        );
+
+        await connection.end();
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ status: 'error', message: 'Data pembayaran tidak ditemukan' });
+        }
+
+        res.json({ status: 'success', message: 'Log transaksi berhasil dihapus' });
+    } catch (error) {
+        res.status(500).json({ status: 'error', error: error.message });
+    }
+});
+
 const PORT = process.env.PORT || 3005;
 app.listen(PORT, () => console.log(`Payment Service running on port ${PORT}`));
