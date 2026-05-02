@@ -59,4 +59,77 @@ class FieldCategoryController extends Controller
             ], 500);
         }
     }
+
+    public function update(Request $request, $id)
+    {
+        $validator = Validator::make($request->all(), [
+            'name'        => 'required|string|unique:field_categories,name,' . $id,
+            'description' => 'nullable|string'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Validasi gagal',
+                'errors'  => $validator->errors()
+            ], 422);
+        }
+
+        try {
+            $category = FieldCategory::find($id);
+
+            if (!$category) {
+                return response()->json([
+                    'status'  => 'error',
+                    'message' => 'Kategori tidak ditemukan'
+                ], 404);
+            }
+
+            $category->update([
+                'name'        => $request->name,
+                'description' => $request->description
+            ]);
+
+            return response()->json([
+                'status'  => 'success',
+                'message' => 'Kategori berhasil diperbarui',
+                'data'    => $category
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Gagal memperbarui kategori',
+                'error'   => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function destroy($id)
+    {
+        try {
+            $category = FieldCategory::find($id);
+
+            if (!$category) {
+                return response()->json([
+                    'status'  => 'error',
+                    'message' => 'Kategori tidak ditemukan'
+                ], 404);
+            }
+
+            $category->delete();
+
+            return response()->json([
+                'status'  => 'success',
+                'message' => 'Kategori berhasil dihapus'
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Gagal menghapus kategori',
+                'error'   => $e->getMessage()
+            ], 500);
+        }
+    }
 }

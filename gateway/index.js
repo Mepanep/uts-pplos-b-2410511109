@@ -43,28 +43,19 @@ app.use('/auth', (req, res, next) => {
     changeOrigin: true
 }));
 
-app.use('/api/fields', verifyJWT, createProxyMiddleware({ 
-    target: 'http://127.0.0.1:8000/api/fields', 
-    changeOrigin: true,
-    ignorePath: true
+app.use('/api/fields', verifyJWT, createProxyMiddleware({
+    target: 'http://127.0.0.1:8000/api/fields',
+    changeOrigin: true
 }));
 
-app.use('/api/categories', verifyJWT, createProxyMiddleware({ 
-    target: 'http://127.0.0.1:8000/api/categories', 
-    changeOrigin: true,
-    ignorePath: true
+app.use('/api/categories', verifyJWT, createProxyMiddleware({
+    target: 'http://127.0.0.1:8000/api/categories',
+    changeOrigin: true
 }));
 
-app.use('/api/book', verifyJWT, createProxyMiddleware({ 
-    target: 'http://127.0.0.1:8000/api/book', 
-    changeOrigin: true,
-    ignorePath: true
-}));
-
-app.use('/api/bookings', verifyJWT, createProxyMiddleware({ 
-    target: 'http://localhost:8000/api/bookings',
-    changeOrigin: true,
-    ignorePath: true 
+app.use('/api/bookings', verifyJWT, createProxyMiddleware({
+    target: 'http://127.0.0.1:8000/api/bookings',
+    changeOrigin: true
 }));
 
 app.use('/api/payment', createProxyMiddleware({ 

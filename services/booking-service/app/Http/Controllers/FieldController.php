@@ -10,7 +10,6 @@ class FieldController extends Controller
 {
     public function index(Request $request)
     {
-        // Sesuaikan nama kolom menjadi field_category_id sesuai image_20e2b8.png
         $query = Field::query();
 
         if ($request->has('field_category_id')) {
@@ -22,7 +21,6 @@ class FieldController extends Controller
 
     public function store(Request $request)
     {
-        // Validasi tanpa kolom 'description' sesuai instruksimu
         $validator = Validator::make($request->all(), [
             'field_category_id' => 'required|integer',
             'name'              => 'required|string|max:255',
@@ -51,6 +49,80 @@ class FieldController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'message' => 'Gagal menambah lapangan',
+                'error'   => $e->getMessage()
+            ], 500);
+        }
+    }
+    public function update(Request $request, $id)
+    {
+        $validator = Validator::make($request->all(), [
+            'field_category_id' => 'required|integer',
+            'name'              => 'required|string|max:255',
+            'price_per_hour'    => 'required|numeric'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Validasi gagal',
+                'errors'  => $validator->errors()
+            ], 422);
+        }
+
+        try {
+            $field = Field::find($id);
+
+            if (!$field) {
+                return response()->json([
+                    'status'  => 'error',
+                    'message' => 'Lapangan tidak ditemukan'
+                ], 404);
+            }
+
+            $field->update([
+                'field_category_id' => $request->field_category_id,
+                'name'              => $request->name,
+                'price_per_hour'    => $request->price_per_hour,
+            ]);
+
+            return response()->json([
+                'status'  => 'success',
+                'message' => 'Data lapangan berhasil diperbarui',
+                'data'    => $field
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Gagal memperbarui data lapangan',
+                'error'   => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function destroy($id)
+    {
+        try {
+            $field = Field::find($id);
+
+            if (!$field) {
+                return response()->json([
+                    'status'  => 'error',
+                    'message' => 'Lapangan tidak ditemukan'
+                ], 404);
+            }
+
+            $field->delete();
+
+            return response()->json([
+                'status'  => 'success',
+                'message' => 'Lapangan berhasil dihapus'
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Gagal menghapus lapangan',
                 'error'   => $e->getMessage()
             ], 500);
         }

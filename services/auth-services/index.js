@@ -165,31 +165,47 @@ app.get('/me', verifyJWT, async (req, res) => {
 });
 
 app.put('/update', verifyJWT, async (req, res) => {
-    const { username, email, profile_photo = null } = req.body;
-    const userId = req.user.id;
+    const username = req.body.username || null;
+    const email = req.body.email || null;
+    const profile_photo = req.body.profile_photo || null;
+    
+    const userId = req.user ? req.user.id : null;
+
+    console.log("Data yang diterima:", { username, email, profile_photo, userId });
+
+    if (!userId) {
+        return res.status(401).json({ error: "User ID tidak ditemukan dalam token" });
+    }
 
     try {
         const [result] = await connection.execute(
             'UPDATE users SET username = ?, email = ?, profile_photo = ? WHERE id = ?',
-            [username, email, profile_photo || null, userId]
+            [username, email, profile_photo, userId]
         );
 
         if (result.affectedRows === 0) {
-            return res.status(404).json({ message: "User tidak ditemukan" });
+            return res.status(404).json({ message: "Gagal update, user tidak ditemukan" });
         }
 
         res.json({ 
             status: 'success', 
-            message: "Profil berhasil diperbarui",
-            user: { username, email } 
+            message: "Profil berhasil diperbarui"
         });
     } catch (error) {
+        console.error("Database Error:", error.message);
         res.status(500).json({ error: error.message });
     }
 });
 
+// DELETE: Hapus Akun User
 app.delete('/delete', verifyJWT, async (req, res) => {
-    const userId = req.user.id;
+    const userId = req.user ? req.user.id : null;
+
+    console.log("Mencoba menghapus User ID:", userId);
+
+    if (!userId) {
+        return res.status(401).json({ error: "User ID tidak ditemukan dalam token" });
+    }
 
     try {
         const [result] = await connection.execute(
@@ -198,14 +214,15 @@ app.delete('/delete', verifyJWT, async (req, res) => {
         );
 
         if (result.affectedRows === 0) {
-            return res.status(404).json({ message: "User tidak ditemukan" });
+            return res.status(404).json({ message: "Gagal menghapus, user tidak ditemukan" });
         }
 
         res.json({ 
             status: 'success', 
-            message: "Akun berhasil dihapus selamanya" 
+            message: "Akun berhasil dihapus selamanya dari sistem" 
         });
     } catch (error) {
+        console.error("Database Error:", error.message);
         res.status(500).json({ error: error.message });
     }
 });

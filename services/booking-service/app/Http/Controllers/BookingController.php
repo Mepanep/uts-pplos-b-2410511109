@@ -53,4 +53,75 @@ class BookingController extends Controller
         $bookings = Booking::with(['user', 'field'])->get();
         return response()->json($bookings);
     }
+
+    public function update(Request $request, $id)
+    {
+        $validator = Validator::make($request->all(), [
+            'status' => 'required|in:pending,success,cancelled'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Validasi gagal',
+                'errors'  => $validator->errors()
+            ], 422);
+        }
+
+        try {
+            $booking = Booking::find($id);
+
+            if (!$booking) {
+                return response()->json([
+                    'status'  => 'error',
+                    'message' => 'Data booking tidak ditemukan'
+                ], 404);
+            }
+
+            $booking->update([
+                'status' => $request->status
+            ]);
+
+            return response()->json([
+                'status'  => 'success',
+                'message' => 'Status booking berhasil diperbarui',
+                'data'    => $booking
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Gagal memperbarui booking',
+                'error'   => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function destroy($id)
+    {
+        try {
+            $booking = Booking::find($id);
+
+            if (!$booking) {
+                return response()->json([
+                    'status'  => 'error',
+                    'message' => 'Data booking tidak ditemukan'
+                ], 404);
+            }
+
+            $booking->delete();
+
+            return response()->json([
+                'status'  => 'success',
+                'message' => 'Data booking berhasil dihapus'
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Gagal menghapus booking',
+                'error'   => $e->getMessage()
+            ], 500);
+        }
+    }
 }
