@@ -43,6 +43,11 @@ app.use('/auth', (req, res, next) => {
     changeOrigin: true
 }));
 
+app.use('/auth/github', createProxyMiddleware({
+    target: 'http://localhost:3004',
+    changeOrigin: true
+}));
+
 app.use('/api/fields', verifyJWT, createProxyMiddleware({
     target: 'http://127.0.0.1:8000/api/fields',
     changeOrigin: true

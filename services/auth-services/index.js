@@ -43,7 +43,6 @@ async function initDB() {
 initDB();
 
 app.get('/github', (req, res) => {
-    console.log("Client ID yang dibaca:", process.env.GITHUB_CLIENT_ID);
     const url = `https://github.com/login/oauth/authorize?client_id=${process.env.GITHUB_CLIENT_ID}&redirect_uri=http://localhost:3000/auth/github/callback&scope=user:email`;
     res.redirect(url);
 });
@@ -65,18 +64,19 @@ app.get('/github/callback', async (req, res) => {
             headers: { Authorization: `token ${githubToken}` }
         });
 
+        // PERBAIKAN DISINI: Menangani data undefined agar MySQL tidak error
         const data = userResponse.data;
         const login = data.login || 'UserGitHub';
-        const email = data.email || `${login}@github.com`;
-        const avatar_url = data.avatar_url || '';
+        const userEmail = data.email || `${login}@github.com`; 
+        const avatar_url = data.avatar_url || null; // Gunakan null jika tidak ada foto
 
-        const [rows] = await connection.execute('SELECT * FROM users WHERE email = ?', [email]);
+        const [rows] = await connection.execute('SELECT * FROM users WHERE email = ?', [userEmail]);
         
         let userId;
         if (rows.length === 0) {
             const [result] = await connection.execute(
                 'INSERT INTO users (username, email, profile_photo, oauth_provider) VALUES (?, ?, ?, ?)',
-                [login, email, avatar_url, 'github']
+                [login, userEmail, avatar_url, 'github']
             );
             userId = result.insertId;
         } else {
@@ -86,25 +86,19 @@ app.get('/github/callback', async (req, res) => {
         const accessToken = jwt.sign(
             { id: userId, username: login }, 
             process.env.JWT_SECRET, 
-            { expiresIn: '15m' }
-        );
-        
-        const refreshToken = jwt.sign(
-            { id: userId }, 
-            process.env.JWT_REFRESH_SECRET, 
-            { expiresIn: '7d' }
+            { expiresIn: '1h' }
         );
 
         res.json({
-            message: "Login Berhasil",
+            status: "success",
+            message: "Login Berhasil via GitHub",
             access_token: accessToken,
-            refresh_token: refreshToken,
-            user: { username: login, email, photo: avatar_url }
+            user: { username: login, email: userEmail }
         });
 
     } catch (error) {
-        console.error("DETAIL ERROR:", error.response ? error.response.data : error.message);
-        res.status(500).json({ error: "Authentication Failed", details: error.message });
+        console.error("OAuth Detail Error:", error.message);
+        res.status(500).json({ error: "OAuth Failed", details: error.message });
     }
 });
 
@@ -197,7 +191,6 @@ app.put('/update', verifyJWT, async (req, res) => {
     }
 });
 
-// DELETE: Hapus Akun User
 app.delete('/delete', verifyJWT, async (req, res) => {
     const userId = req.user ? req.user.id : null;
 
