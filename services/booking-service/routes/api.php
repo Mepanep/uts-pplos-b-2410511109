@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/user-info', function (Request $request) {
     return response()->json([
-        'user' => $request->user() // Jika menggunakan library auth Laravel
+        'user' => $request->user()
     ]);
 });
 
